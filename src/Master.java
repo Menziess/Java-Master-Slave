@@ -5,7 +5,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -65,23 +68,28 @@ public class Master {
 
 		// Distribute the ranges over the nodes
 		System.out.println(nodes + " Nodes will find primes in a range of numbers between 0 - " + limit + ".");
-
-		int prevMax = 0;
-		int max = limit;
+		
+		// Define first range
+		int min = 0;
+		int max = (limit - min) / 2;
+		
+		// For each node set range to find primes in
 		for (int i = 0; i < nodes; i++) {
 
-			max = max / 2;
-			if (max < 1000) {
+			// If last node, set max to the limit
+			if (i + 1 == nodes)
 				max = limit;
-				break;
-			}
-			problem[i][0] = prevMax;
+			
+			System.out.println("Node " + (i + 1) + ": " + min + " / " + max);
+			
+			problem[i][0] = min;
 			problem[i][1] = max;
-			prevMax = max + 1;
+			
+			min = max + 1;
+			max = max + (limit - max) / 2;
 		}
 
 		return problem;
-
 	}
 
 	/**
@@ -92,9 +100,11 @@ public class Master {
 	private static class Handler extends Thread {
 
 		private Socket socket;
+		private int nrResults; 
 		private int[] range;
 		private BufferedReader in;
 		private PrintWriter out;
+		private ArrayList<Integer> primes;
 
 		public Handler(Socket socket, int[] range) {
 			this.socket = socket;
@@ -106,16 +116,23 @@ public class Master {
 
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				out = new PrintWriter(socket.getOutputStream(), true);
+				primes = new ArrayList<Integer>();
+				nrResults = 0;
 
-				// int[] test = {10_000, 20_000};
+				// Send tasks with COMPUTE head
 				out.println("COMPUTE " + Utils.arrayToString(range));
 
+				// Read inputs
 				while (true) {
 					String input = in.readLine();
+					
 					if (input == null)
 						return;
-
+					
 					System.out.println(input);
+//					Arrays.asList(input).forEach(el -> {
+//						primes.add(Integer.parseInt(el)); 
+//					});
 				}
 
 			} catch (IOException e) {
